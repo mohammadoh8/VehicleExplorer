@@ -15,39 +15,39 @@ namespace VehicleExplorer.Web.Integrations.IntegrationClient
 
         public async Task<OperationResult<T>> GetAsync<T>(string requestUrl, CancellationToken cancellationToken = default)
         {
-            HttpResponseMessage response;
-
             try
             {
-                response = await _httpClient.GetAsync(requestUrl, cancellationToken);
+                var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("external API request failed Uri: {RequestUri}, StatusCode: {StatusCode}",
+                        requestUrl,
+                        response.StatusCode);
+
+                    return OperationResult<T>.Failure(
+                        "The external service request failed");
+                }
+
+                var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                var data = JsonSerializer.Deserialize<T>(responseString);
+
+                if (data is null)
+                {
+                    return OperationResult<T>.Failure(
+                        "The external service request returned invalid data");
+                }
+
+                return OperationResult<T>.Success(data);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "external API request failed Uri: {RequestUri}", requestUrl);
 
-                return OperationResult<T>.Failure("The external service request failed");
+                return OperationResult<T>.Failure(
+                    "The external service request failed");
             }
-
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("external API request failed Uri: {RequestUri}, StatusCode: {StatusCode}",
-                    requestUrl,
-                    response.StatusCode);
-
-                return OperationResult<T>.Failure("The external service request failed");
-            }
-
-            var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            var data = JsonSerializer.Deserialize<T>(responseString);
-
-            if (data is null)
-            {
-                return OperationResult<T>.Failure("The external service request returned empty data");
-            }
-
-            return OperationResult<T>.Success(data);
-
         }
     }
 }

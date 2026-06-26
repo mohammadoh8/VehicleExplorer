@@ -1,5 +1,6 @@
 using FluentValidation;
 using VehicleExplorer.Web.Integrations.VehicleProviders;
+using VehicleExplorer.Web.Models.Api;
 using VehicleExplorer.Web.Services.Vehicles.Requests;
 using VehicleExplorer.Web.Shared;
 
@@ -9,24 +10,64 @@ namespace VehicleExplorer.Web.Services.Vehicles
     {
         private readonly IVehicleProviderClient _vehicleClient;
         private readonly ICacheService _cacheService;
+        private readonly IValidator<VehicleMakesRequest> _vehicleMakesValidator;
         private readonly IValidator<VehicleModelsRequest> _vehicleModelsValidator;
 
         public VehicleCatalogService(
             IVehicleProviderClient vehicleClient,
             ICacheService cacheService,
+            IValidator<VehicleMakesRequest> vehicleMakesValidator,
             IValidator<VehicleModelsRequest> vehicleModelsValidator)
         {
             _vehicleClient = vehicleClient;
             _cacheService = cacheService;
+            _vehicleMakesValidator = vehicleMakesValidator;
             _vehicleModelsValidator = vehicleModelsValidator;
         }
 
-        public async Task<OperationResult<List<VehicleMake>>> GetMakesAsync(
+        public async Task<OperationResult<PagedResponse<VehicleMake>>> GetMakesAsync(
+            VehicleMakesRequest request,
             CancellationToken cancellationToken = default)
         {
-            return await _cacheService.GetOrCreateAsync(
-                "vehicle-makes",() => LoadMakesAsync(cancellationToken),
-                TimeSpan.FromHours(24));
+            var validationResult = await _vehicleMakesValidator.ValidateAsync(request, cancellationToken);
+
+            if (!validationResult.IsValid)
+            {
+                return OperationResult<PagedResponse<VehicleMake>>.Failure(
+                    validationResult.Errors[0].ErrorMessage);
+            }
+
+            var result = await _cacheService.GetOrCreateAsync(
+                "vehicle-makes",
+                () => LoadMakesAsync(cancellationToken),
+                TimeSpan.FromHours(24),
+                makesResult => makesResult.IsSuccess && makesResult.Data is not null);
+
+            if (!result.IsSuccess || result.Data is null)
+            {
+                return OperationResult<PagedResponse<VehicleMake>>.Failure(result.ErrorMessage!);
+            }
+
+            var query = result.Data.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(request.Search))
+            {
+                query = query.Where(make =>
+                    make.Name.Contains(request.Search.Trim(), StringComparison.OrdinalIgnoreCase));
+            }
+
+            var totalCount = query.Count();
+            var items = query
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToList();
+
+            return OperationResult<PagedResponse<VehicleMake>>.Success(
+                new PagedResponse<VehicleMake>(
+                    items,
+                    request.Page,
+                    request.PageSize,
+                    totalCount));
         }
 
         private async Task<OperationResult<List<VehicleMake>>> LoadMakesAsync(

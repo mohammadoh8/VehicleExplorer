@@ -15,18 +15,25 @@ namespace VehicleExplorer.Web.Infrastructure
             this IServiceCollection services,
             IConfiguration configuration)
         {
+            // generic
             services.AddControllersWithViews();
             services.AddMemoryCache();
-            services.AddSingleton<ICacheService, MemoryCacheService>();
-            services.AddScoped<IValidator<VehicleModelsRequest>, VehicleModelsRequestValidator>();
-            services.AddScoped<IVehicleProviderClient, NhtsaVehicleClient>();
-            services.AddScoped<IVehicleCatalogService, VehicleCatalogService>();
-            services.Configure<NhtsaOptions>(configuration.GetSection("IntegrationUrls:Nhtsa"));
-
             services.AddHttpClient<IApiHttpClient, ApiHttpClient>(client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(10);
             });
+            
+            // services
+            services.AddSingleton<ICacheService, MemoryCacheService>();
+            services.AddScoped<IValidator<VehicleMakesRequest>, VehicleMakesRequestValidator>();
+            services.AddScoped<IValidator<VehicleModelsRequest>, VehicleModelsRequestValidator>();
+            services.AddScoped<IVehicleProviderClient, NhtsaVehicleClient>();
+            services.AddScoped<IVehicleCatalogService, VehicleCatalogService>();
+            
+            // options
+            services.Configure<NhtsaOptions>(configuration.GetSection("IntegrationUrls:Nhtsa"));
+
+           
 
             return services;
         }

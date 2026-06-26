@@ -8,11 +8,11 @@ namespace VehicleExplorer.Web.Integrations.VehicleProviders.Nhtsa.Dtos
         public int MakeId { get; set; }
 
         [JsonPropertyName("Make_Name")]
-        public string MakeName { get; set; }
+        public string MakeName { get; set; } = string.Empty;
 
         public static VehicleMake ToVehicleMake(NhtsaMakeDto make)
         {
-            return new VehicleMake(make.MakeId, make.MakeName.Trim());
+            return new VehicleMake(make.MakeId, make.MakeName?.Trim() ?? string.Empty);
         }
     }
 }

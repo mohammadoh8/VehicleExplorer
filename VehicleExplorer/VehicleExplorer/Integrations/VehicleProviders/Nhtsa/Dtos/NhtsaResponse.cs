@@ -8,6 +8,6 @@
 
         public string? SearchCriteria { get; set; }
 
-        public List<T> Results { get; set; }
+        public List<T> Results { get; set; } = [];
     }
 }

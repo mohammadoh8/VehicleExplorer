@@ -13,7 +13,11 @@ namespace VehicleExplorer.Web.Shared
             _logger = logger;
         }
 
-        public async Task<T> GetOrCreateAsync<T>(string key,Func<Task<T>> callback,TimeSpan expiration)
+        public async Task<T> GetOrCreateAsync<T>(
+            string key,
+            Func<Task<T>> callback,
+            TimeSpan expiration,
+            Func<T, bool>? shouldCache = null)
         {
             try
             {
@@ -30,13 +34,16 @@ namespace VehicleExplorer.Web.Shared
 
             var value = await callback();
 
-            try
+            if (shouldCache is null || shouldCache(value))
             {
-                _memoryCache.Set(key, value, expiration);
-            }
-            catch (Exception ex)
-            {
-                 _logger.LogWarning(ex, "Failed to set cache key {CacheKey}", key);
+                try
+                {
+                    _memoryCache.Set(key, value, expiration);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to set cache key {CacheKey}", key);
+                }
             }
 
             return value;

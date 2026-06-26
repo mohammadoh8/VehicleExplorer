@@ -5,6 +5,7 @@ namespace VehicleExplorer.Web.Shared
         Task<T> GetOrCreateAsync<T>(
             string key,
             Func<Task<T>> callback,
-            TimeSpan expiration);
+            TimeSpan expiration,
+            Func<T, bool>? shouldCache = null);
     }
 }
