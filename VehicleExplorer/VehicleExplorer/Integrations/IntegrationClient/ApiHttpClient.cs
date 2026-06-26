@@ -25,7 +25,7 @@ namespace VehicleExplorer.Web.Integrations.IntegrationClient
             {
                 _logger.LogError(ex, "external API request failed Uri: {RequestUri}", requestUrl);
 
-                return OperationResult<T>.Failure("The external service request timed out");
+                return OperationResult<T>.Failure("The external service request failed");
             }
 
             if (!response.IsSuccessStatusCode)
@@ -34,7 +34,7 @@ namespace VehicleExplorer.Web.Integrations.IntegrationClient
                     requestUrl,
                     response.StatusCode);
 
-                return OperationResult<T>.Failure("The external service is currently unavailable");
+                return OperationResult<T>.Failure("The external service request failed");
             }
 
             var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -43,7 +43,7 @@ namespace VehicleExplorer.Web.Integrations.IntegrationClient
 
             if (data is null)
             {
-                return OperationResult<T>.Failure("The external service is currently unavailable");
+                return OperationResult<T>.Failure("The external service request returned empty data");
             }
 
             return OperationResult<T>.Success(data);
