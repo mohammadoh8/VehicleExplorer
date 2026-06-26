@@ -1,7 +1,5 @@
-﻿using System.Net;
-using System.Net.Http;
-using System.Text.Json;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+﻿using System.Text.Json;
+using VehicleExplorer.Web.Shared;
 
 namespace VehicleExplorer.Web.Integrations.IntegrationClient
 {
@@ -15,18 +13,18 @@ namespace VehicleExplorer.Web.Integrations.IntegrationClient
             _logger = logger;
         }
 
-        public async Task<ApiClientResult<T>> GetAsync<T>(string requestUri, CancellationToken cancellationToken = default)
+        public async Task<OperationResult<T>> GetAsync<T>(string requestUrl, CancellationToken cancellationToken = default)
         {
-            using var response = await _httpClient.GetAsync(requestUri, cancellationToken);
+            using var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning(
                     "External API request failed. Uri: {RequestUri}, StatusCode: {StatusCode}",
-                    requestUri,
+                    requestUrl,
                     response.StatusCode);
 
-                return ApiClientResult<T>.Failure("The external service is currently unavailable.",response.StatusCode);
+                return OperationResult<T>.Failure("The external service is currently unavailable");
                 
             }
 
@@ -36,9 +34,9 @@ namespace VehicleExplorer.Web.Integrations.IntegrationClient
 
             if (data is null)
             {
-                ApiClientResult<T>.Failure("The external service is currently unavailable.", response.StatusCode);
+                return OperationResult<T>.Failure("The external service is currently unavailable");
             }
-            return ApiClientResult<T>.Success(data!, response.StatusCode);
+            return OperationResult<T>.Success(data!);
         }
     }
 }

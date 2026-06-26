@@ -1,17 +1,18 @@
 ﻿using VehicleExplorer.Web.Integrations.ExternalVehicleProvider.Dtos;
+using VehicleExplorer.Web.Shared;
 
 namespace VehicleExplorer.Web.Integrations.ExternalVehicleProvider
 {
     public interface INhtsaVehicleClient
     {
-        Task<List<MakeDto>> GetAllMakesAsync(
+        Task<OperationResult<List<MakeDto>>> GetAllMakesAsync(
          CancellationToken cancellationToken = default);
 
-        Task<List<VehicleTypeDto>> GetVehicleTypesForMakeAsync(
+        Task<OperationResult<List<VehicleTypeDto>>> GetVehicleTypesForMakeAsync(
             int makeId,
             CancellationToken cancellationToken = default);
 
-        Task<List<ModelDto>> GetModelsForMakeYearAndTypeAsync(
+        Task<OperationResult<List<ModelDto>>> GetModelsForMakeYearAndTypeAsync(
             int makeId,
             int year,
             string vehicleType,
