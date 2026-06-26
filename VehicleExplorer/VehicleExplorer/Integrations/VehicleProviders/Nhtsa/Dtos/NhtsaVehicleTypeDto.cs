@@ -1,8 +1,8 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
-namespace VehicleExplorer.Web.Integrations.ExternalVehicleProvider.Dtos
+namespace VehicleExplorer.Web.Integrations.VehicleProviders.Nhtsa.Dtos
 {
-    public class VehicleTypeDto
+    public class NhtsaVehicleTypeDto
     {
         [JsonPropertyName("Make_ID")]
         public int MakeId { get; set; }
@@ -15,5 +15,10 @@ namespace VehicleExplorer.Web.Integrations.ExternalVehicleProvider.Dtos
 
         [JsonPropertyName("Model_Name")]
         public string ModelName { get; set; }
+
+        public static VehicleType ToVehicleType(NhtsaVehicleTypeDto vehicleType)
+        {
+            return new VehicleType(vehicleType.ModelId, vehicleType.ModelName.Trim());
+        }
     }
 }

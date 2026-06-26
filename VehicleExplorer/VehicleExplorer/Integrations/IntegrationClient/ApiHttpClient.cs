@@ -7,7 +7,7 @@ namespace VehicleExplorer.Web.Integrations.IntegrationClient
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<ApiHttpClient> _logger;
-        public ApiHttpClient(HttpClient httpClient,ILogger<ApiHttpClient> logger)
+        public ApiHttpClient(HttpClient httpClient, ILogger<ApiHttpClient> logger)
         {
             _httpClient = httpClient;
             _logger = logger;
@@ -15,28 +15,39 @@ namespace VehicleExplorer.Web.Integrations.IntegrationClient
 
         public async Task<OperationResult<T>> GetAsync<T>(string requestUrl, CancellationToken cancellationToken = default)
         {
-            using var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
+            HttpResponseMessage response;
+
+            try
+            {
+                response = await _httpClient.GetAsync(requestUrl, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "external API request failed Uri: {RequestUri}", requestUrl);
+
+                return OperationResult<T>.Failure("The external service request timed out");
+            }
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning(
-                    "External API request failed. Uri: {RequestUri}, StatusCode: {StatusCode}",
+                _logger.LogWarning("external API request failed Uri: {RequestUri}, StatusCode: {StatusCode}",
                     requestUrl,
                     response.StatusCode);
 
                 return OperationResult<T>.Failure("The external service is currently unavailable");
-                
             }
 
-            await using var stringStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
 
-            var data = await JsonSerializer.DeserializeAsync<T>(stringStream);
+            var data = JsonSerializer.Deserialize<T>(responseString);
 
             if (data is null)
             {
                 return OperationResult<T>.Failure("The external service is currently unavailable");
             }
-            return OperationResult<T>.Success(data!);
+
+            return OperationResult<T>.Success(data);
+
         }
     }
 }

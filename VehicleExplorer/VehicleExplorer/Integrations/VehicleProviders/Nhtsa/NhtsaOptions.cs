@@ -1,4 +1,4 @@
-﻿namespace VehicleExplorer.Web.Integrations.Nhtsa
+﻿namespace VehicleExplorer.Web.Integrations.VehicleProviders.Nhtsa
 {
     public class NhtsaOptions
     {

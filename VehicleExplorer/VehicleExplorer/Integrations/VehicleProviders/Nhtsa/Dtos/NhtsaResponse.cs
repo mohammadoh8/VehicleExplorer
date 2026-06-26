@@ -1,4 +1,4 @@
-﻿namespace VehicleExplorer.Web.Integrations.ExternalVehicleProvider.Dtos
+﻿namespace VehicleExplorer.Web.Integrations.VehicleProviders.Nhtsa.Dtos
 {
     public sealed class NhtsaResponse<T>
     {
