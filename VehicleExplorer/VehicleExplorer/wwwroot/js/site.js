@@ -8,6 +8,7 @@ class SearchDropdown {
         this.search = "";
         this.selected = null;
         this.isLoading = false;
+        this.loadId = 0;
 
         this.render();
         this.bindEvents();
@@ -40,6 +41,12 @@ class SearchDropdown {
         this.input.addEventListener("focus", () => this.open());
         this.input.addEventListener("input", () => {
             clearTimeout(debounceId);
+
+            if (!this.input.value.trim()) {
+                this.clearSelection();
+                return;
+            }
+
             debounceId = setTimeout(() => {
                 this.selected = null;
                 this.search = this.input.value.trim();
@@ -50,13 +57,7 @@ class SearchDropdown {
         });
 
         this.clearButton.addEventListener("click", () => {
-            this.selected = null;
-            this.search = "";
-            this.input.value = "";
-            this.page = 1;
-            this.load();
-            this.options.onChange?.(null);
-            this.open();
+            this.clearSelection();
         });
 
         this.moreButton.addEventListener("click", () => {
@@ -73,10 +74,11 @@ class SearchDropdown {
     }
 
     async load(append = false) {
-        if (this.isLoading) {
+        if (append && this.isLoading) {
             return;
         }
 
+        const loadId = ++this.loadId;
         this.isLoading = true;
         this.moreButton.disabled = true;
         this.setStatus("Loading...");
@@ -86,17 +88,27 @@ class SearchDropdown {
                 ? await this.loadRemote()
                 : this.loadLocal(append);
 
+            if (loadId !== this.loadId) {
+                return;
+            }
+
             this.items = append ? [...this.items, ...result.items] : result.items;
             this.totalCount = result.totalCount;
             this.drawItems();
         } catch {
+            if (loadId !== this.loadId) {
+                return;
+            }
+
             this.items = [];
             this.totalCount = 0;
             this.setStatus("Unable to load options.");
             this.moreButton.hidden = true;
         } finally {
-            this.isLoading = false;
-            this.moreButton.disabled = false;
+            if (loadId === this.loadId) {
+                this.isLoading = false;
+                this.moreButton.disabled = false;
+            }
         }
     }
 
@@ -164,6 +176,16 @@ class SearchDropdown {
         this.input.value = item.name;
         this.options.onChange?.(item);
         this.close();
+    }
+
+    clearSelection() {
+        this.selected = null;
+        this.search = "";
+        this.input.value = "";
+        this.page = 1;
+        this.load();
+        this.options.onChange?.(null);
+        this.open();
     }
 
     setItems(items) {
