@@ -1,0 +1,45 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy application
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+
+            APP_DIR="$HOME/VehicleExplorer"
+            REPO_URL="${{ secrets.REPO_URL }}"
+
+            if [ ! -d "$APP_DIR/.git" ]; then
+              git clone "$REPO_URL" "$APP_DIR"
+            fi
+
+            cd "$APP_DIR"
+            git fetch origin main
+            git reset --hard origin/main
+
+            cd VehicleExplorer
+
+            docker stop vehicle-explorer || true
+            docker rm vehicle-explorer || true
+
+            docker build -f VehicleExplorer/Dockerfile -t vehicle-explorer .
+
+            docker run -d \
+              --name vehicle-explorer \
+              --restart unless-stopped \
+              -p 80:8080 \
+              vehicle-explorer
